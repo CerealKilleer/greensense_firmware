@@ -1,0 +1,17 @@
+# PlatformIO
+.pio/
+.vscode/
+*.pioenvs/
+*.db
+*.log
+
+# Archivos de compilación
+*.o
+*.a
+*.so
+*.out
+
+# Archivos binarios
+*.bin
+*.elf
+*.map
