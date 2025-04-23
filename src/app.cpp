@@ -2,6 +2,7 @@
 #include "lib_dht_22.hpp"
 #include "circular_array.hpp"
 #include "esp_timer.h"
+#include "esp_sleep.h"
 
 /// @brief Número de muestras almacenadas para todas las variables
 #define SAMPLES 8
@@ -79,12 +80,9 @@ static void init_send_sensors_timer(void)
 /// lecturas de temperatura. Solo guarda el valor si la lectura fue válida.
 static void app_read_env_tem(void)
 {
-    static uint8_t idx;
     float temp;
-    if (dht_22_get_temp(temp)) {
+    if (dht_22_get_temp(temp))
         env_temps.add_value(temp);
-        idx++;
-    }
 }
 
 /// @brief Lee la humedad del sensor DHT22 y la almacena en el array `humidities`
@@ -93,12 +91,9 @@ static void app_read_env_tem(void)
 /// lecturas de humedad. Solo guarda el valor si la lectura fue válida.
 static void app_read_air_hum(void)
 {
-    static uint8_t idx;
     float hum;
-    if (dht_22_get_humidity(hum)) {
+    if (dht_22_get_humidity(hum))
         air_humidities.add_value(hum);
-        idx++;
-    }
 }
 
 /// @brief Inicializa el sistema de la aplicación
@@ -129,4 +124,5 @@ void app_main(void)
             green_sense_flags.send_sensors = false;
         }
     }
+    esp_light_sleep_start();
 }
