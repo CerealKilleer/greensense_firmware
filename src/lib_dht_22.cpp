@@ -6,7 +6,7 @@
 #include <Arduino.h>
 #include <DHT.h>
 #include "lib_dht_22.hpp"
-#define DHT_PIN 2
+#define DHT_PIN 1
 #define ERROR_TEMP -274.0f
 #define ERROR_HUMIDITY -1.0f
 

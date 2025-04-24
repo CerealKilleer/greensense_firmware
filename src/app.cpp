@@ -1,8 +1,23 @@
 #include <Arduino.h>
 #include "lib_dht_22.hpp"
 #include "circular_array.hpp"
+#include "lib_bh170.hpp"
+#include "lib_sen0114.hpp"
 #include "esp_timer.h"
 #include "esp_sleep.h"
+
+/// @brief Valor no válido cuando los sensores no se pueden leer
+#define INVALID_VALUE -1
+
+/// @brief PIN para el sensor de humedad del suelo
+#define SEN0114_PIN 13
+
+/// @brief Pines SDA y SCL para el medidor de luz
+#define SDA_PIN 21
+#define SCL_PIN 20
+
+/// @brief Dirección del sensor 0x23 a tierra, 0x5C a VCC
+#define BH170_ADDR 0x23
 
 /// @brief Número de muestras almacenadas para todas las variables
 #define SAMPLES 8
@@ -16,6 +31,12 @@ circular_array<float, SAMPLES> env_temps;
 
 /// @brief Array circular para almacenar muestras de humedad
 circular_array<float, SAMPLES> air_humidities;
+
+/// @brief Array circular para almacenar muestras intensidad de luz
+circular_array<float, SAMPLES> luxometer;
+
+/// @brief Array circular para almacenar muestras de humedad del suelo
+circular_array<float, SAMPLES> sen0114;
 
 /// @brief Estructura de banderas para controlar el estado del sistema
 typedef union {
@@ -83,6 +104,8 @@ static void app_read_env_tem(void)
     float temp;
     if (dht_22_get_temp(temp))
         env_temps.add_value(temp);
+    else
+        env_temps.add_value(INVALID_VALUE);
 }
 
 /// @brief Lee la humedad del sensor DHT22 y la almacena en el array `humidities`
@@ -94,6 +117,30 @@ static void app_read_air_hum(void)
     float hum;
     if (dht_22_get_humidity(hum))
         air_humidities.add_value(hum);
+    else
+        air_humidities.add_value(INVALID_VALUE);
+}
+
+/// @brief Lee la cantidad de luz del sensor BH170 y la almacena en el array `luxometer`
+///
+/// Esta función utiliza un índice circular para guardar las últimas `SAMPLES`
+/// lecturas de cantidad de luz. Solo guarda el valor si la lectura fue válida.
+static void app_read_luxometer(void)
+{
+    float lux;
+    if (bh170_get_lux(lux))
+        luxometer.add_value(lux);
+    else
+        luxometer.add_value(INVALID_VALUE);   
+}
+
+/// @brief Lee la cantidad de luz del sensor BH170 y la almacena en el array `luxometer`
+///
+/// Esta función utiliza un índice circular para guardar las últimas `SAMPLES`
+/// lecturas de cantidad de luz. Solo guarda el valor si la lectura fue válida.
+static void app_read_sen0114(void)
+{
+    sen0114.add_value(sen0114_get_moisture_hum_percentage(SEN0114_PIN));
 }
 
 /// @brief Inicializa el sistema de la aplicación
@@ -103,6 +150,7 @@ void app_init(void)
 {
     Serial.begin(115200);
     dht_22_init();
+    bh170_init(BH170_ADDR, SDA_PIN, SCL_PIN);
     init_read_sensors_timer();
     init_send_sensors_timer();
 }
@@ -116,13 +164,16 @@ void app_main(void)
         if (green_sense_flags.read_sensors) {
             app_read_env_tem();
             app_read_air_hum();
+            app_read_luxometer();
+            app_read_sen0114();
             green_sense_flags.read_sensors = false;
         }
         if (green_sense_flags.send_sensors) {
-            Serial.println("Temperatura: " + String(env_temps.get_mean_value()));
-            Serial.println("Humedad del aire: " + String(air_humidities.get_mean_value()));
+            Serial.println("Temperatura: [°C]" + String(env_temps.get_mean_value()));
+            Serial.println("Humedad del aire [%]: " + String(air_humidities.get_mean_value()));
+            Serial.println("Luz [lux]: " + String(luxometer.get_mean_value()));
+            Serial.println("Humedad del suelo [%]" + String(sen0114.get_mean_value()));
             green_sense_flags.send_sensors = false;
         }
     }
-    esp_light_sleep_start();
 }
