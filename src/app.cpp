@@ -8,6 +8,7 @@
 #include "esp_timer.h"
 #include "esp_sleep.h"
 #include "lib_pump_level.hpp"
+#include "secrets.hpp"
 
 /// @brief Array circular para almacenar muestras de temperatura
 circular_array<float, SAMPLES> env_temps;
