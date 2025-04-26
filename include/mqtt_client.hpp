@@ -1,8 +1,6 @@
 #ifndef __MQTT_CLIENT_HPP__
 #define __MQTT_CLIENT_HPP__
 
-
-
 /// @brief Inicializa el cliente MQTT
 /// @param ssid El nombre de la red WiFi
 /// @param password La contraseña de la red WiFi

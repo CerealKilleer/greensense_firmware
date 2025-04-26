@@ -12,11 +12,7 @@
 ///@brief sensor de bomba
 #define PUMP_LEVEL_PIN 6
 
-/// @brief SSID del WiFi
-#define SSID "Flia_Lopez_Mejia"
 
-/// @brief Password del WiFi
-#define PASSWORD "normandiayalgora"
 
 /// @brief Valor no válido cuando los sensores no se pueden leer
 #define INVALID_VALUE -1
