@@ -17,4 +17,4 @@
 *.map
 
 #Secretos
-*secrets.hpp
+/include/secrets.hpp
