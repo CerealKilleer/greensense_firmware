@@ -9,6 +9,8 @@
 #include "esp_sleep.h"
 #include "lib_pump_level.hpp"
 #include "secrets.hpp"
+#include "greensense_types.hpp"
+#include "actuator.hpp"
 
 /// @brief Array circular para almacenar muestras de temperatura
 circular_array<float, SAMPLES> env_temps;
@@ -25,17 +27,7 @@ circular_array<float, SAMPLES> sen0114;
 /// @brief Array circular para almacenar muestras del nivel de bomba
 circular_array<uint8_t, SAMPLES> pump_level;
 
-/// @brief Estructura de banderas para controlar el estado del sistema
-typedef union {
-    uint8_t flags; ///< Byte completo de flags
-    struct {
-        bool read_sensors : 1; ///< Bandera que indica cuándo leer sensores
-        bool send_sensors : 1;
-        uint8_t : 6; ///< Relleno de bits no utilizados
-    };
-} flags_t; 
-
-/// @brief Instancia global de banderas del sistema
+/// @brief Banderas de la aplicación
 volatile flags_t green_sense_flags;
 
 /// @brief Callback del temporizador que activa la lectura de sensores
@@ -149,6 +141,7 @@ void app_init(void)
     dht_22_init();
     bh170_init(BH170_ADDR, SDA_PIN, SCL_PIN);
     pump_level_sensor_init(PUMP_LEVEL_PIN);
+    actuator_init(ACTUATOR_PIN);
     init_read_sensors_timer();
     init_send_sensors_timer();
 }
@@ -158,6 +151,7 @@ void app_init(void)
 /// Esta función se ejecuta continuamente desde el `loop()` de Arduino.
 void app_main(void)
 {
+    mqtt_incoming_data();
     while(green_sense_flags.flags) {
         if (green_sense_flags.read_sensors) {
             app_read_env_tem();
@@ -176,5 +170,16 @@ void app_main(void)
                                 pump_level.get_mean_value());
             green_sense_flags.send_sensors = false;
         }
+
+        if (green_sense_flags.turn_on_pump) {
+            actuator_act(HIGH);
+            green_sense_flags.turn_on_pump = false;
+        } 
+
+        if (green_sense_flags.turn_off_pump) {
+            actuator_act(LOW);
+            green_sense_flags.turn_off_pump = false;
+        }
+    
     }
 }

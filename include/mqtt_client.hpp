@@ -30,4 +30,6 @@ void mqtt_publish_sensors(float temp, float amb_hum,
  */
 
 void mqtt_client_init(const char *ssid, const char* password);
+
+void mqtt_incoming_data(void);
 #endif

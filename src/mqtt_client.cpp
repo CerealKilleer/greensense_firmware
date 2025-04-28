@@ -7,6 +7,8 @@
 #include "certificades.hpp"
 #include "mqtt_client.h"
 #include "secrets.hpp"
+#include "greensense_types.hpp"
+
 
 ///@brief Cliente WiFi seguro
 WiFiClientSecure client;
@@ -20,6 +22,15 @@ Adafruit_MQTT_Publish air_hum_sensor = Adafruit_MQTT_Publish(&mqtt, IO_USERNAME 
 Adafruit_MQTT_Publish lux_sensor = Adafruit_MQTT_Publish(&mqtt, IO_USERNAME "/feeds/luxometer");
 Adafruit_MQTT_Publish sen0114_sensor = Adafruit_MQTT_Publish(&mqtt, IO_USERNAME "/feeds/sen0114");
 Adafruit_MQTT_Publish pump_sensor = Adafruit_MQTT_Publish(&mqtt, IO_USERNAME "/feeds/pump");
+Adafruit_MQTT_Subscribe actuator = Adafruit_MQTT_Subscribe(&mqtt, IO_USERNAME "/feeds/actuator", MQTT_QOS_1);
+
+static void pump_init(char *data, uint16_t len)
+{
+    if (strcmp("1", data))
+        green_sense_flags.turn_on_pump = true;
+    else if (strcmp("2", data))
+        green_sense_flags.turn_off_pump = true;
+}
 
 static void wifi_init(const char *ssid, const char* password)
 {
@@ -74,5 +85,12 @@ void mqtt_client_init(const char *ssid, const char* password)
 {
     wifi_init(ssid, password);
     client.setCACert(CERTIFICATE);
+    actuator.setCallback(pump_init);
+    mqtt.subscribe(&actuator);
     mqtt_connect();
+}
+
+void mqtt_incoming_data(void)
+{
+    mqtt.processPackets(50);
 }

@@ -9,10 +9,11 @@
 #ifndef __APP_HPP__
 #define __APP_HPP__
 
+///@brief numero de pin del actuador
+#define ACTUATOR_PIN 11
+
 ///@brief sensor de bomba
 #define PUMP_LEVEL_PIN 6
-
-
 
 /// @brief Valor no válido cuando los sensores no se pueden leer
 #define INVALID_VALUE -1
