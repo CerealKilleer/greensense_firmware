@@ -11,6 +11,9 @@
 #include "secrets.hpp"
 #include "greensense_types.hpp"
 #include "actuator.hpp"
+#include "lib_lcd162.hpp"
+#include "LiquidCrystal_I2C.h"
+
 
 /// @brief Array circular para almacenar muestras de temperatura
 circular_array<float, SAMPLES> env_temps;
@@ -142,6 +145,7 @@ void app_init(void)
     bh170_init(BH170_ADDR, SDA_PIN, SCL_PIN);
     pump_level_sensor_init(PUMP_LEVEL_PIN);
     actuator_init(ACTUATOR_PIN);
+    lcd_162_init();
     init_read_sensors_timer();
     init_send_sensors_timer();
 }
@@ -163,11 +167,13 @@ void app_main(void)
         }
         if (green_sense_flags.send_sensors) {
             Serial.println("Publicando...");
-            mqtt_publish_sensors(env_temps.get_mean_value(), 
-                                air_humidities.get_mean_value(),
-                                luxometer.get_mean_value(),
-                                sen0114.get_mean_value(),
-                                pump_level.get_mean_value());
+            float temp = env_temps.get_mean_value();
+            float air_hum = air_humidities.get_mean_value();
+            float lux = luxometer.get_mean_value();
+            float soil_moist = sen0114.get_mean_value();
+            uint8_t pump_lev = pump_level.get_mean_value();
+            mqtt_publish_sensors(temp, air_hum, lux, soil_moist, pump_lev);
+            lcd_162_write(temp, soil_moist, lux, pump_lev);
             green_sense_flags.send_sensors = false;
         }
 
